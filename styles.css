@@ -1,0 +1,69 @@
+body {
+    padding: 0px;
+    margin: 0px;
+    background-color: white;
+    color: rgb(17 24 39);
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    scrollbar-width: none;  /* Firefox */
+}
+
+body::-webkit-scrollbar { 
+    display: none;  /* Safari and Chrome */
+}
+
+@font-face {
+    font-family: "arcadeclassic";
+    src: url(fonts/arcadeclassic.regular.ttf);
+}
+
+h1 {
+    font-family: "arcadeclassic";
+}
+
+.interactive-border {
+    border-width: 2px;
+    border-radius: 0.5rem;
+    border-style: dashed;
+    border-color: rgb(209 213 219);
+    cursor: pointer;
+}
+
+.interactive-border:hover {
+    background-color: rgb(243 244 246);
+    border-color: rgb(209 213 219);
+}
+
+@media (prefers-color-scheme: dark) {
+
+    body {
+        background-color: rgb(55 65 81);
+        color: white;
+    }
+
+    .interactive-border {
+        border-color: rgb(75 85 99);
+    }
+    
+    .interactive-border:hover {
+        background-color: rgb(75 85 99);
+        border-color: rgb(107 114 128);
+    }
+}
+
+.mesh-frame {
+    width: 25rem;
+    height: 25rem;
+    border: 0.4rem dashed white;
+    border-radius: 2rem;
+}
+
+.new-mesh-frame {
+    width: 10rem;
+    height: 10rem;
+    border-width: 2px;
+    border-style: dashed;
+    border-color: rgb(75, 85, 99);
+    cursor: pointer;
+    
+}
+
