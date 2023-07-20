@@ -16,7 +16,7 @@ function eraseMe() {
 }
 
 async function onclickLoadModalMesh() {
-    const classAttribute = "w-60 h-60 interactive-border";
+    const classAttribute = "w-48 h-48 interactive-border";
     const grid = document.getElementById("mesh-frame-grid");
     const add = document.getElementById("add-mesh-frame");
 
@@ -36,7 +36,7 @@ async function onclickLoadModalMesh() {
 }
 
 function meshAssetOnclick() {
-    const classAttribute = "w-60 h-60 interactive-border";
+    const classAttribute = "w-48 h-48 interactive-border";
     const grid = document.getElementById("mesh-frame-grid");
     const add = document.getElementById("add-mesh-frame");
 
