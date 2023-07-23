@@ -1,4 +1,4 @@
-export const names = ["cube", "bunny", "cow", "chicken", "dolphin"];
+export const names = ["cube", "bunny", "cow", "chicken", "rat", "newscene"];
 
 export function get(name) {
     return new Promise((resolve, reject) => {

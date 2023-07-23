@@ -1,10 +1,8 @@
 function createElementFromHTML(htmlString) {
     var div = document.createElement('div');
     div.innerHTML = htmlString.trim();
-  
-    // Change this to div.childNodes to support multiple top-level nodes.
-    return div.firstChild;
-  }
+    return div.firstChild; // div.childNodes for multiple instances
+}
 
 export const spinner_modal = createElementFromHTML(`
 <div role="status" class="w-40 h-40 interactive-border flex justify-center items-center">

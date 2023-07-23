@@ -13,18 +13,18 @@
 <body>
     <header class="w-full h-12 bg-gray-900 flex items-center fixed top-0 justify-between uppercase">
         <h1 class="ml-8 text-5xl tracking-wider">Mesh Merger</h1>
-        <button class="text-center h-10 mr-8 bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white py-2 px-4 border border-blue-500 hover:border-transparent rounded-full">
+        <button id="merge-button" class="text-center h-10 mr-8 bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white py-2 px-4 border border-blue-500 hover:border-transparent rounded-full">
             Merge
         </button>
     </header>
     <main class="">
         <div id="mesh-frame-grid" class="my-12 p-2 w-1/2 flex flex-wrap gap-4">
             <button id="add-mesh-frame" class="w-48 h-48 flex justify-center items-center interactive-border" data-modal-target="defaultModal" data-modal-toggle="defaultModal" type="button">
-                <i class="fa fa-plus fa-4x text-gray-300 dark:text-gray-600"></i>
+                <i class="fa fa-plus fa-4x text-gray-300 dark:text-gray-400"></i>
             </button>
         </div>
         <div class="p-2 w-1/2 fixed right-0 bottom-12 top-12">
-            <canvas class="h-full aspect-square border-2 border-solid rounded-lg border-gray-300 dark:border-gray-600"></canvas>
+            <canvas id="main-scene" class="h-full aspect-square border-2 border-solid rounded-lg border-gray-300 dark:border-gray-600"></canvas>
         </div>
     </main>
     <footer class="w-full h-12 bg-gray-900 flex justify-between items-center fixed bottom-0">

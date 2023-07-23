@@ -78,9 +78,17 @@ assets.names.forEach(async (name) => { // renders the modal
 
 // EVENTS
 
+var mainScene;
+
+document.getElementById("merge-button").onclick = () => {
+    let node = document.getElementById("main-scene");
+    mainScene = new Scene(scenes[0].mesh.spheralize(),node);
+}
+
 // RENDER LOOP
 
 (function loop() {
     render.renderScenes(scenes);
+    if (mainScene) render.renderScenes([mainScene]);
     requestAnimationFrame(loop);
 })();
