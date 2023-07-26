@@ -45,7 +45,7 @@ export function renderScenes(scenes) {
         pass.setPipeline(scene.renderPipeline);
         pass.setVertexBuffer(0, scene.VBOBuffer);
         pass.setBindGroup(0, scene.bindGroup);
-        pass.draw(scene.VBO.length / 6); // 6 vertices
+        pass.draw(scene.VBO.length/scene.mesh.vertex_size); // 6 vertices
         pass.end();
         
     });

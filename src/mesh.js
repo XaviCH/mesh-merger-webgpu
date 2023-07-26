@@ -48,8 +48,9 @@ export class Face {
         return new Set([f0.a, f0.b, f0.c].filter((v) => list.includes(v)));
     }
 
-    static or(f0, f1) {
-        return new Set([f0.a, f0.b, f0.c, f1.a, f1.b, f1.c])
+    static or() {
+        return new Set(Array.from(arguments).reduce((prev, curr) => prev.concat(curr.a, curr.b, curr.c),[]));
+        //return new Set([f0.a, f0.b, f0.c, f1.a, f1.b, f1.c])
     }
 
 }
@@ -58,7 +59,8 @@ export class Mesh {
 
     vertices = [];
     faces = [];
-
+    vertex_size = 6;
+    
     generateVBO() {
         let vbo = [];
         this.faces.forEach(face => {
@@ -160,93 +162,102 @@ export class Mesh {
         let mesh = this.copy();
         // extract vertices
         let stack = []; // store in order the removed vertices
+        let unchecked = new Set(mesh.vertices);
 
-        while (mesh.vertices.length > 4) {
-            let vertex = mesh.vertices.find((vertex) => mesh.faces.filter((face) => face.contains(vertex)).length == 3);
-            if (!vertex)
-            vertex = mesh.vertices.find((vertex) => mesh.faces.filter((face) => face.contains(vertex)).length == 4);
-            if (!vertex)
-            vertex = mesh.vertices.find((vertex) => mesh.faces.filter((face) => face.contains(vertex)).length == 5);
+        const find = (iterator) => { // find the lowest grade vertex 
+            let faces = []; let vertex = null;
 
-            let faces = mesh.faces.filter((face) => face.contains(vertex));
-            let nFaces = [];
-            let oFaces = faces.filter(() => true);
-            faces.forEach((face) => {mesh.faces.splice(mesh.faces.indexOf(face),1)});
-            
-            if (faces.length == 5) { // there's a bug in here // bunny can't be morph
-                let vertices = faces.reduce((prev, curr) => new Set([...[curr.a,curr.b,curr.c],...Array.from(prev)]), new Set()); 
-                vertices.delete(vertex); 
-                vertices = Array.from(vertices);
+            for(let value of iterator.values()) {
+                let list = [];
+                for(let face of mesh.faces) {
+                    if (face.contains(value)) {
+                        list.push(face);
+                        if (list.length > 5) break;
+                    }
+                }
+                if (list.length == 3) return { vertex: value, faces: list };
 
-                let nears = faces.filter(face => face.contains(vertices[0]));
-                let not_nears = faces.filter(face => !face.contains(vertices[0]));
-
-                nears.forEach(near => {
-                    let adjancent = not_nears.find(face => Face.and(near,face).size == 2);
-                    let v = Face.or(adjancent, near); v.delete(vertex); v = Array.from(v);
-                    nFaces.push(new Face(v[0],v[1],v[2]));
-                    not_nears.splice(not_nears.indexOf(adjancent),1);
-                });
-
-                let last = new Set([not_nears[0].a,not_nears[0].b,not_nears[0].c]);
-                last.delete(vertex); last = Array.from(last);
-                nFaces.push(new Face(last[0],last[1],vertices[0]));
-                /*
-                // two adjacent faces made a triangle
-                let face = faces.find((f) => Face.and(faces[0], f).size == 2);
-                let vertices = Face.or(faces[0], face); vertices.delete(vertex); vertices = Array.from(vertices);
-                nFaces.push(new Face(vertices[0], vertices[1], vertices[2]));
-                faces.splice(faces.indexOf(face),1); faces.splice(0,1);
-                // find pivot to separate the other faces
-                face = faces.find((f) => faces.reduce((prev, curr) => prev + Face.and(f,curr).size,0) == 7);
-                faces.splice(faces.indexOf(face),1);
-                let pivot = Face.and(face, faces[0]); pivot.delete(vertex); pivot = Array.from(pivot)[0];
-                // face 2
-                vertices = Face.or(faces[0], face); vertices.delete(vertex); vertices = Array.from(vertices);
-                nFaces.push(new Face(vertices[0], vertices[1], vertices[2]));
-                // face 3
-                vertices = Face.or(faces[1], faces[0]); vertices.delete(pivot); vertices.delete(vertex); vertices = Array.from(vertices);
-                nFaces.push(new Face(vertices[0], vertices[1], vertices[2]));
-                */
-            } else if (faces.length == 4) {
-                let antagonist = faces.find((face) => Face.and(face, faces[0]).size == 1);
-                let nears = faces.filter((face) => Face.and(face, faces[0]).size == 2);
-                // face 1
-                let vertices = Face.or(faces[0], nears[0]); 
-                vertices.delete(vertex); 
-                vertices = Array.from(vertices);
-                nFaces.push(new Face(vertices[0], vertices[1], vertices[2]));
-                // face 2
-                vertices = Face.or(antagonist, nears[1]); 
-                vertices.delete(vertex); 
-                vertices = Array.from(vertices);
-                nFaces.push(new Face(vertices[0], vertices[1], vertices[2]));
-            } else if (faces.length == 3) {
-                let vertices = new Set([faces[0].a, faces[0].b, faces[0].c, faces[1].a, faces[1].b, faces[1].c, faces[2].a, faces[2].b, faces[2].c]);
-                vertices.delete(vertex); vertices = Array.from(vertices);
-                nFaces.push(new Face(vertices[0], vertices[1], vertices[2]));
-            } else throw new Error("Not a valid mesh.")
-
-            nFaces.forEach((face) => mesh.faces.push(face));
-            stack.push({vertex: vertex, oldFaces: oFaces, newFaces: nFaces});
-            let index = mesh.vertices.indexOf(vertex);
-            mesh.vertices.splice(index,1);
-            //if (stop == 0) throw new Error("her");
+                if (faces.length == 0 || list.length < faces.length) {
+                    faces = list;
+                    vertex = value;
+                }
+            }
+            return { vertex: vertex, faces: faces }
         }
 
-        // force regular shape
-        vec3.add(mesh.vertices[0], vec3.fromValues(-1,-1,-1), vec3.fromValues(0,0,0));
-        vec3.add(mesh.vertices[1], vec3.fromValues(-1,1,1), vec3.fromValues(0,0,0));
-        vec3.add(mesh.vertices[2], vec3.fromValues(1,-1,1), vec3.fromValues(0,0,0));
-        vec3.add(mesh.vertices[3], vec3.fromValues(1,1,-1), vec3.fromValues(0,0,0));
+        while(mesh.faces.length > 4) { // TODO: bugged
+            let object = find(unchecked);
+            let vertex = object.vertex;
+            let faces = object.faces;
+            // Clear finded faces
+            unchecked.delete(vertex);
+            faces.forEach((face) => {
+                let index = mesh.faces.indexOf(face);
+                mesh.faces.splice(index,1);
+            });
+            // Add new faces
+            let newFaces = [];
+            if (faces.length == 3) {
+                let vertices = Face.or(...faces); 
+                vertices.delete(vertex);
+                newFaces.push(new Face(...Array.from(vertices)));
+            } else if (faces.length == 4) {
+                let vertices = Face.or(...faces); 
+                vertices.delete(vertex);
+
+                let pivot = vertices.values().next().value;
+                vertices.delete(pivot);
+
+                let opposite = Array.from(vertices).find(vertex => 
+                    faces.filter(face => face.contains(vertex) && !face.contains(pivot)).length == 2
+                );
+                vertices.delete(opposite);
+
+                vertices = Array.from(vertices);
+                newFaces.push(new Face(pivot, ...vertices));
+                newFaces.push(new Face(opposite, ...vertices));
+
+            } else if (faces.length == 5) { // there's a bug in here cow can't be morph
+                let vertices = Face.or(...faces);
+                vertices.delete(vertex);
+                
+                let pivot = vertices.values().next().value;
+                vertices.delete(pivot);
+
+                let opposites = Array.from(vertices).filter(vertex => 
+                    faces.filter(face => face.contains(vertex) && !face.contains(pivot)).length == 2
+                );
+                opposites.forEach(opposite => vertices.delete(opposite));
+                
+                newFaces.push(new Face(pivot, ...opposites));
+
+                Array.from(vertices).forEach(vertex => {
+                    let opposite = opposites.find(opposite => 
+                        faces.find(face => face.contains(vertex) && face.contains(opposite)) != undefined
+                    );
+                    newFaces.push(new Face(pivot, vertex, opposite));
+                });
+
+            } else throw new Error("Not a valid mesh.");
+
+            newFaces.forEach((face) => mesh.faces.push(face));
+            stack.push({vertex: vertex, oldFaces: faces, newFaces: newFaces});
+        }
+
+        // Force to be a regular tethahedra
+        let vertices = Array.from(unchecked);
+        vec3.add(vertices[0], vec3.fromValues(-1,-1,-1), vec3.fromValues(0,0,0));
+        vec3.add(vertices[1], vec3.fromValues(-1,1,1), vec3.fromValues(0,0,0));
+        vec3.add(vertices[2], vec3.fromValues(1,-1,1), vec3.fromValues(0,0,0));
+        vec3.add(vertices[3], vec3.fromValues(1,1,-1), vec3.fromValues(0,0,0));
         
-        mesh.vertices.forEach((vertex) => {
+        vertices.forEach((vertex) => {
             vec3.normalize(vertex,vertex);
             vec3.multiply(vertex,vertex,vec3.fromValues(0.5,0.5,0.5));
         });
         mesh.faces.forEach((face) => {face.normalize()});
-
-        while(stack.length > 0) {
+        // Add all the faces
+        while(stack.length > 0) { // check the right method
             let item = stack.pop();
 
             let vertex = item.vertex;
@@ -268,7 +279,7 @@ export class Mesh {
             vertices.reduce((previous, current) => vec3.add(vertex, previous, current), vec3.fromValues(0,0,0));
             vec3.normalize(vertex,vertex);
             vec3.multiply(vertex,vertex,vec3.fromValues(0.5,0.5,0.5));
-            mesh.vertices.push(vertex);
+            //mesh.vertices.push(vertex);
             oldF.forEach((face) => {face.normalize()});       
         }
         return mesh;

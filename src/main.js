@@ -3,6 +3,8 @@ import * as assets from "./assets.js";
 import {Mesh} from "./mesh.js";
 import {Scene} from "./scene.js";
 import * as html from "./html.js";
+import { MetaMesh } from "./metamesh.js";
+import { MetaScene } from "./metascene.js";
 // CONSTANS
 
 const scenes = []; // Meshes to be merged
@@ -11,8 +13,8 @@ const modal_scenes = []; // Meshes that can be selected on the modal
 // FUNCTIONS
 
 function eraseMe() {
-    scenes.splice(scenes.indexOf(this.scene), 1);
-    this.remove(); 
+    scenes.splice(scenes.indexOf(this.parentElement.parentElement.scene), 1);
+    this.parentElement.parentElement.remove();
 }
 
 async function onclickLoadModalMesh() {
@@ -22,13 +24,13 @@ async function onclickLoadModalMesh() {
 
     let clone = html.spinner_main.cloneNode(true);
     grid.insertBefore(clone, add.nextSibling);
-    let node = document.createElement("canvas");
-    node.setAttribute("class",classAttribute);
-    node.onclick=eraseMe;
+
+    let node = html.canvas.cloneNode(true);
+    node.children[1].children[1].onclick=eraseMe;
     
     document.getElementById("close-new-mesh").click(); // close modal
 
-    let scene = new Scene(this.mesh, node);
+    let scene = new Scene(this.mesh, node.children[0]);
     node.scene = scene;
     scenes.push(scene);
     grid.insertBefore(node, clone);
@@ -82,13 +84,20 @@ var mainScene;
 
 document.getElementById("merge-button").onclick = () => {
     let node = document.getElementById("main-scene");
-    mainScene = new Scene(scenes[0].mesh.spheralize(),node);
+    mainScene = new MetaScene(new MetaMesh(scenes.map(scene => scene.mesh)),node);
+    //mainScene = new Scene(scenes[0].mesh.spheralize(),node);
 }
 
 // RENDER LOOP
 
 (function loop() {
     render.renderScenes(scenes);
-    if (mainScene) render.renderScenes([mainScene]);
+    
+    if (mainScene) {
+        for(let i=0; i<scenes.length; ++i){
+            mainScene.scalars[i] = scenes[i].canvas.nextElementSibling.children[0].value/100;
+        } 
+        render.renderScenes([mainScene]);
+    }
     requestAnimationFrame(loop);
 })();
