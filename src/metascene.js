@@ -62,7 +62,7 @@ export class MetaScene {
         this.scalars = new Float32Array(metamesh.meshes.map(_ => 0));
 
         this.uniformBuffer = render.device.createBuffer({
-            size: 64*3+16, //4*this.scalars.length,
+            size: 64*3+16, //4*this.scalars.length, just for 4 dimensions
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
         });
 
@@ -156,7 +156,7 @@ export class MetaScene {
                 @binding(0) @group(0) var<uniform> transformations: TransformData;
         
                 @vertex
-                fn vertexMain(@location(0) pos: vec3f, ${directions}, @location(${this.mesh.meshes.length+1}) normal : vec3f, ${normals}) -> Fragment {
+                fn vertexMain(@location(0) pos: vec3f, ${directions}, @location(${this.mesh.meshes.length+1}) normal : vec3f, ${normals} ) -> Fragment {
                     var output: Fragment;
                     var finalPos: vec3f = pos + ${scalaredDirections};
                     output.Position = transformations.projection * transformations.view * transformations.model * vec4f(finalPos, 1);

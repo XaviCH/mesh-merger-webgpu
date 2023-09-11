@@ -43,6 +43,33 @@ export class Face {
         return this.a == vertex || this.b == vertex || this.c == vertex;
     }
 
+    calculateAnglesAtVertex(vertex) {
+        let vertices = [this.a, this.b, this.c].filter(v => v !== vertex);
+        let v1 = vec3.sub(vec3.create(),vertices[0],vertex);
+        let v2 = vec3.sub(vec3.create(),vertices[1],vertex);
+        return vec3.angle(v1,v2);
+        var dot = v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2]; // dot product
+        var len1 = Math.sqrt(v1[0] * v1[0] + v1[1] * v1[1] + v1[2] * v1[2]); // length of v1
+        var len2 = Math.sqrt(v2[0] * v2[0] + v2[1] * v2[1] + v2[2] * v2[2]); // length of v2
+        var angle = Math.acos(dot / (len1 * len2)); // angle in radians
+        return angle;
+    }
+    
+    calculateArea() {
+        let vertices = [this.a, this.b, this.c];
+        const side1 = vec3.distance(vertices[0],vertices[1]); // Assuming a distanceTo() method for vectors
+        const side2 = vec3.distance(vertices[1],vertices[2]);
+        const side3 = vec3.distance(vertices[2],vertices[0]);
+
+        // Calculate the semiperimeter
+        const s = (side1 + side2 + side3) / 2;
+
+        // Calculate the area using Heron's formula
+        const area = Math.sqrt(s * (s - side1) * (s - side2) * (s - side3));
+
+        return area;
+    }
+
     static and(f0, f1) {
         let list = [f1.a, f1.b, f1.c];
         return new Set([f0.a, f0.b, f0.c].filter((v) => list.includes(v)));
@@ -155,6 +182,22 @@ export class Mesh {
             face.c = mesh.vertices[indexC];
         })
         return mesh;
+    }
+
+    // Function to get neighbors of a vertex in the mesh
+    getNeighborsOfVertex(vertex) {
+        // Implement logic to retrieve neighboring vertices of the given vertex
+        let neighbors = new Set();
+        // Iterate through all vertices in the mesh
+        for (const face of this.faces) {
+            if (face.contains(vertex)) {
+                neighbors.add(face.a);
+                neighbors.add(face.b);
+                neighbors.add(face.c);
+            }
+        }
+        neighbors.delete(vertex);
+        return neighbors;
     }
     // https://www.cs.ubc.ca/~sheffa/papers/SigCDV.pdf
     // https://www.academia.edu/14778022/Polyhedron_realization_for_shape_transformation
@@ -285,10 +328,78 @@ export class Mesh {
         return mesh;
     }
 
+    steps() {
+        let mesh = this.copy();
+
+        const avgArea = mesh.faces.reduce((sum,f) => sum + f.calculateArea(), 0) / mesh.faces.length;
+        //https://www.researchgate.net/publication/241164512_Method_of_Characterising_3D_Faces_Using_Gaussian_Curvature
+        function computeGaussianCurvature(mesh, vertex) {
+            // Find the triangles adjacent to the vertex
+            let faces = mesh.faces.filter(faces => faces.contains(vertex))
+            let vertices = Face.or(...faces);
+            vertices.delete(vertex);
+            vertices = [...vertices];
+            let sumAngles = faces.reduce((res,face) => res + face.calculateAnglesAtVertex(vertex), 0)
+            let sumArea = faces.reduce((res, f) => res + f.calculateArea(),0)
+
+            return (2*Math.PI - sumAngles) / (avgArea + sumArea/3);
+        }
+
+        function computeBarycenterOfNeighbors(mesh, vertex) {
+            
+            let neighbors = mesh.getNeighborsOfVertex(vertex);
+            let barycenter = vec3.create(); 
+            let valence = neighbors.size;
+            
+            neighbors.forEach(v => vec3.add(barycenter,barycenter,v));
+            vec3.divide(barycenter,barycenter,vec3.fromValues(valence,valence,valence));
+          
+            return barycenter;
+            
+        }
+
+        const distThreshold = 0.001; // arbitrari value
+        let maxIter = mesh.vertices.length * 5; // aribitrari value to stop high dense
+        let done = false;
+        while (maxIter != 0 && !done) {
+            maxIter -= 1;
+            done = true;            
+            mesh.vertices.forEach(v => v.gaussianCurvature = computeGaussianCurvature(mesh, v))
+            let pmaxs = [...mesh.vertices].sort((a,b) => {
+                if (b.gaussianCurvature < 0 && a.gaussianCurvature > 0) return 1;
+                if (b.gaussianCurvature > 0 && a.gaussianCurvature < 0) return -1;
+                return Math.abs(b.gaussianCurvature) - Math.abs(a.gaussianCurvature);
+            });
+            if (pmaxs[0].gaussianCurvature >= 0) break;
+
+            for(let pmax of pmaxs) {
+                let newPmax = computeBarycenterOfNeighbors(mesh, pmax);
+        
+                if (vec3.distance(newPmax,pmax) > distThreshold) {
+
+                    vec3.copy(pmax,newPmax);
+                    done = false;
+                    break;
+
+                }
+            }
+            
+        }
+        // Expand all vertices to a sphere
+        mesh.normalize();
+        
+        mesh.vertices.forEach(vertex => {
+            vec3.normalize(vertex,vertex);
+            vec3.multiply(vertex,vertex,vec3.fromValues(0.5,0.5,0.5));
+        });
+        
+        return mesh;
+    }
+
     readFile(file) {
         const reader = new FileReader();
         reader.onload = () => {
-            // add code
+            // TODO: add code
         };
         reader.readAsText(file);
     }
