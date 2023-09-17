@@ -1,14 +1,22 @@
-import * as render from "./render.js";
-import * as assets from "./assets.js";
-import {Mesh} from "./mesh.js";
-import {Scene} from "./scene.js";
-import * as html from "./html.js";
-import { MetaMesh } from "./metamesh.js";
-import { MetaScene } from "./metascene.js";
-// CONSTANS
+import { render } from "./handler/render.js";
+import { Mesh } from "./data/mesh.js";
+import { Scene } from "./handler/scene.js";
+import * as html from "./component/html.js";
+import { MetaScene } from "./handler/metascene.js";
+import { topology_merging } from "./algorithm/constructor/sphere.js";
+import { gaussian_relaxation, tetrahedron } from "./algorithm/parametrization/sphere.js";
 
-const scenes = []; // Meshes to be merged
-const modal_scenes = []; // Meshes that can be selected on the modal
+// Constants
+const assets = ["cube", "bunny", "cow", "chicken", "rat", "sphere","cube_deformed","wolf", "tiger","sphere_def"];
+
+const ASSETS_MODAL = document.getElementById("new-mesh-wrap");
+const SELECTED_MESHES = document.getElementById("mesh-frame-grid");
+const ADD_MESH_BUTTON = document.getElementById("add-mesh-frame");
+
+// Scenes
+
+let scenes = []; // Meshes to be merged
+let mainScene; // Mesh result
 
 // FUNCTIONS
 
@@ -17,87 +25,80 @@ function eraseMe() {
     this.parentElement.parentElement.remove();
 }
 
-async function onclickLoadModalMesh() {
-    const classAttribute = "w-48 h-48 interactive-border";
-    const grid = document.getElementById("mesh-frame-grid");
-    const add = document.getElementById("add-mesh-frame");
-
-    let clone = html.spinner_main.cloneNode(true);
-    grid.insertBefore(clone, add.nextSibling);
-
-    let node = html.canvas.cloneNode(true);
-    node.children[1].children[1].onclick=eraseMe;
+async function onclickAsset() {
+    let spinner = html.spinner_main.cloneNode(true);
+    SELECTED_MESHES.insertBefore(spinner, ADD_MESH_BUTTON.nextSibling);
+    let canvas = html.canvas.cloneNode(true);
+    canvas.children[1].children[1].onclick=eraseMe;
     
-    document.getElementById("close-new-mesh").click(); // close modal
+    new Promise((resolve) => { // does not work as expected
+        setTimeout(() => resolve(new Scene(this.mesh, canvas.children[0])), 100);
+    }).then(scene => {
+        canvas.scene = scene;
+        scenes.push(scene);
+        SELECTED_MESHES.insertBefore(canvas, spinner);
+        spinner.remove();
+    });
 
-    let scene = new Scene(this.mesh, node.children[0]);
-    node.scene = scene;
-    scenes.push(scene);
-    grid.insertBefore(node, clone);
-    clone.remove();
-}
-
-function meshAssetOnclick() {
-    const classAttribute = "w-48 h-48 interactive-border";
-    const grid = document.getElementById("mesh-frame-grid");
-    const add = document.getElementById("add-mesh-frame");
-
-    let new_spinner = spinner.cloneNode();
-
-    grid.insertBefore(new_spinner, add.nextSibling);
-    document.getElementById("close-new-mesh").click(); // close modal
-
-    let node = document.createElement("canvas");
-    node.setAttribute("class",classAttribute);
-    node.onclick=eraseMe;
-    let scene = new Scene(this.mesh, node);
-    node.scene = scene;
-    scenes.push(scene);
-    grid.insertBefore(node, new_spinner);
-    new_spinner.remove();
+    document.getElementById("close-new-mesh").click();
 }
 
 // RENDER
 
-assets.names.forEach(async (name) => { // renders the modal
-    const modal = document.getElementById("new-mesh-wrap");
-    const classAttribute = "w-40 h-40 interactive-border";
+// Render assets to the modal
 
-    let clone = html.spinner_modal.cloneNode(true);
-    modal.appendChild(clone);
+async function load_modal_assets() {
+    assets.forEach(async (name) => {
+        const classAttribute = "w-40 h-40 interactive-border";
 
-    let asset = await assets.get(name);
+        let spinner = html.spinner_modal.cloneNode(true);
+        ASSETS_MODAL.appendChild(spinner);
+        console.log("1"+name);
+        fetch(`assets/${name}.obj`).then(async (result) => {
+            let canvas = document.createElement("canvas");
+            canvas.setAttribute("class",classAttribute);
+            canvas.onclick = onclickAsset
 
-    let node = document.createElement("canvas");
-    node.setAttribute("class",classAttribute);
-    node.onclick = onclickLoadModalMesh
-    node.mesh = Mesh.fromString(asset.data);
-    
-    render.renderScenes([new Scene(node.mesh, node)]);
-    modal.insertBefore(node,clone);
-    clone.remove();
-});
+            canvas.mesh = Mesh.fromString(await result.text());
 
-// EVENTS
-
-var mainScene;
-
-document.getElementById("merge-button").onclick = () => {
-    let node = document.getElementById("main-scene");
-    mainScene = new MetaScene(new MetaMesh(scenes.map(scene => scene.mesh)),node);
-    //mainScene = new Scene(scenes[0].mesh.spheralize(),node);
+            render(new Scene(canvas.mesh, canvas));
+            ASSETS_MODAL.insertBefore(canvas,spinner);
+            spinner.remove();
+        });
+    })
 }
 
-// RENDER LOOP
+//
 
-(function loop() {
-    render.renderScenes(scenes);
+function setUpMergeButton() {
+    const node = document.getElementById("main-scene");
+
+    document.getElementById("merge-button").onclick = () => {
+        //mainScene = new MetaScene(topology_merging(polyhedron(scenes[0].mesh),gaussian_relaxation(scenes[1].mesh)), node);
+        mainScene = new MetaScene(topology_merging(...scenes.map(scene => gaussian_relaxation(scene.mesh))), node);
+        //mainScene = new MetaScene(topology_merging(scenes.map(scene => scene.parametrization)), node);
+    }
+}
+
+// Render loop
+
+function loop() {
+    render(...scenes);
     
     if (mainScene) {
         for(let i=0; i<scenes.length; ++i){
             mainScene.scalars[i] = scenes[i].canvas.nextElementSibling.children[0].value/100;
         } 
-        render.renderScenes([mainScene]);
+        render(mainScene);
     }
     requestAnimationFrame(loop);
-})();
+}
+
+// Flow Execution
+
+$(document).ready(() => {
+
+    load_modal_assets();
+    setUpMergeButton();
+    loop();
+})

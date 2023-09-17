@@ -17,6 +17,10 @@ export function get(name) {
     });
 }
 
+export function getf(name) {
+    return fetch(`assets/${name}.obj`);
+}
+
 export var assets = [];
 
 

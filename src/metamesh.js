@@ -119,7 +119,7 @@ export class MetaMesh {
     constructor(meshes) {
         this.vertex_size = 3+3+3*meshes.length*2;
         this.meshes = meshes;
-        let spheres = meshes.map(mesh => mesh.steps());
+        let spheres = meshes.map(mesh => mesh.spheralize());
         // creo las supervertex
         for(let i=0; i<meshes[0].vertices.length; ++i) {
             this.vertices.push({ 

@@ -1,20 +1,20 @@
 // https://codelabs.developers.google.com/your-first-webgpu-app?hl=es-419#2
 // https://www.w3.org/TR/webgpu/
 
-import {mat4} from "gl-matrix";
-
 if (!navigator.gpu) {
     throw new Error("WebGPU not supported on this browser.");
 }
+
 const adapter = await navigator.gpu.requestAdapter();
+
 if (!adapter) {
-throw new Error("No appropriate GPUAdapter found.");
+    throw new Error("No appropriate GPUAdapter found.");
 }
 
 export const device = await adapter.requestDevice();
 export const canvasFormat = navigator.gpu.getPreferredCanvasFormat();
 
-export function renderScenes(scenes) {
+export function render(...scenes) {
     let encoder = device.createCommandEncoder()
 
     scenes.forEach(scene => {
