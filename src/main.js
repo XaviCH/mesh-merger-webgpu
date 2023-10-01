@@ -5,9 +5,10 @@ import * as html from "./component/html.js";
 import { MetaScene } from "./handler/metascene.js";
 import { topology_merging } from "./algorithm/constructor/sphere.js";
 import { gaussian_relaxation, tetrahedron } from "./algorithm/parametrization/sphere.js";
+import { vec3 } from "gl-matrix";
 
 // Constants
-const assets = ["cube", "bunny", "cow", "chicken", "rat", "sphere","cube_deformed","wolf", "tiger","sphere_def"];
+const assets = ["cube","cube_deformed","sphere","sphere_def","cow", "rat","wolf", "tiger"];
 
 const ASSETS_MODAL = document.getElementById("new-mesh-wrap");
 const SELECTED_MESHES = document.getElementById("mesh-frame-grid");
@@ -17,7 +18,7 @@ const ADD_MESH_BUTTON = document.getElementById("add-mesh-frame");
 
 let scenes = []; // Meshes to be merged
 let mainScene; // Mesh result
-
+let SPHERE;
 // FUNCTIONS
 
 function eraseMe() {
@@ -86,8 +87,11 @@ function loop() {
     render(...scenes);
     
     if (mainScene) {
+        let total = scenes.reduce((add, scene) => add+Number(scene.canvas.nextElementSibling.children[0].value), 0);
+        //if (total<100) total = 100;
         for(let i=0; i<scenes.length; ++i){
-            mainScene.scalars[i] = scenes[i].canvas.nextElementSibling.children[0].value/100;
+            if (total == 0) mainScene.scalars[i] = 0.0;
+            else mainScene.scalars[i] = (Math.pow(Number(scenes[i].canvas.nextElementSibling.children[0].value),2)/total)/100;
         } 
         render(mainScene);
     }
@@ -96,9 +100,15 @@ function loop() {
 
 // Flow Execution
 
-$(document).ready(() => {
+$(document).ready(async () => {
 
     load_modal_assets();
     setUpMergeButton();
+    await fetch(`assets/dense_sphere.obj`).then(async (result) => {
+        SPHERE = Mesh.fromString(await result.text());
+        SPHERE.vertices.forEach(vertex => vertex.parametrization = vec3.clone(vertex.position));
+        SPHERE.faces.forEach(face => face.parametrization = vec3.clone(face.normal));
+    });
+
     loop();
 })

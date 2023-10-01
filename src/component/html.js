@@ -27,7 +27,7 @@ export const canvas = createElementFromHTML(`
     <canvas class="w-48 h-48">
     </canvas>
     <div class="absolute top-0 left-0 w-48 h-48 p-4 pt-8 items-center justify-center hidden group-hover:flex flex-wrap opacity-80">
-        <input id="default-range" type="range" value="50" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700">
+        <input type="range" value="50" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700">
         <button type="button" class="w-12 h-12 rounded hover:bg-gray-800">
             <i class="fa fa-trash"></i>
         </button>

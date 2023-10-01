@@ -162,8 +162,14 @@ export function topology_merging(...meshes) {
             ));
         });
         // Merge all
+        if (meshes.indexOf(mesh)+1 == meshes.length) {
+            metamesh.vertices = metavertices;
+            metamesh.faces = metafaces;
+            return metamesh;
+        }
         metamesh.vertices = metamesh.vertices.concat(metavertices);
         metamesh.faces = metamesh.faces.concat(metafaces);
+        
     }
 
     return metamesh;

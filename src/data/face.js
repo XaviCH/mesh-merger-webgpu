@@ -32,7 +32,7 @@ export class Face {
 
         if (vec3.dist(v2,ZERO) > vec3.dist(v1,ZERO)) 
             vec3.add(normal,negate,ZERO);
-
+        
         vec3.normalize(normal,normal);
         this.normal = normal;
         return normal;
@@ -44,9 +44,14 @@ export class Face {
 
     contains(vertex) { return this.vertices.includes(vertex); }
 
+    /*
     static and(f0, f1) {
         let list = f1.vertices;
         return new Set([f0.vertices].filter((v) => list.includes(v)));
+    }*/
+
+    static and(...faces) {
+        return new Set(faces[0].vertices.filter(vertex => faces.filter(f => f.contains(vertex)).length == faces.length))
     }
 
     static or(...faces) {
