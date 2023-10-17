@@ -298,27 +298,14 @@ export function gaussian_relaxation(_mesh) {
         //if (not_found) distThreshold /= 2;
 
     }
+
     // Center the mesh
-    // JS optimization
     const length = mesh.vertices.length;
-    // Translate vectors to center
-    /*
-    let center = vec3.create();
-    mesh.vertices.forEach(vertex => vec3.add(center,center,vertex.parametrization));
-    vec3.div(center,center,vec3.fromValues(mesh.vertices.length,mesh.vertices.length,mesh.vertices.length));
-    mesh.vertices.forEach(vertex => {
-        const parametrization = vec3.create();
-        vertex.parametrization = vec3.div(parametrization,
-            vec3.normalize(parametrization,vec3.sub(parametrization,vertex.parametrization,center)),
-            vec3.fromValues(2,2,2));
-    });
-    */
-    /*
     let centroid = mesh.vertices.reduce((add, vertex) => vec3.add(add,add,vertex.parametrization),vec3.create());
     vec3.div(centroid,centroid,vec3.fromValues(length,length,length));
-    let n_centroid = vec3.mul(vec3.create(),centroid,vec3.fromValues(-1,-1,-1));
-    mesh.vertices.forEach(vertex => vec3.add(vertex.parametrization,vertex.parametrization,n_centroid));
-    */
+    mesh.vertices.forEach(vertex => vec3.sub(vertex.parametrization,vertex.parametrization,centroid));
+
+    /*
     // Normalize DEBUG purpose
     let distance = 0;
     mesh.vertices.forEach(v1 => mesh.vertices.forEach(v2 => {
@@ -328,27 +315,9 @@ export function gaussian_relaxation(_mesh) {
     }));
     const inverse = vec3.divide(vec3.create(),vec3.fromValues(0.5,0.5,0.5),vec3.fromValues(distance/2,distance/2,distance/2));
     mesh.vertices.forEach(vertex => vec3.mul(vertex.parametrization,vertex.parametrization,inverse))
-    /*
-    const ZERO = vec3.create();
-
-    let farest = mesh.vertices[0].parametrization;
-    let distance = vec3.distance(farest,ZERO);
-
-    mesh.vertices.forEach(vertex => {
-        let aux_distance = vec3.distance(vertex.parametrization,ZERO);
-        if (aux_distance>distance) {
-            farest = vertex.parametrization;
-            distance = aux_distance;
-        }
-    });
-
-    let inverse = vec3.divide(vec3.create(),vec3.fromValues(0.5,0.5,0.5),vec3.fromValues(distance,distance,distance));
-    
-    mesh.vertices.forEach(vertex => vec3.mul(vertex.parametrization,vertex.parametrization,inverse))
     */
-    
-    // shape into sphere
-    
+
+    // Displace into sphere
     mesh.vertices.forEach(vertex => {
         vec3.mul(vertex.parametrization,
             vec3.normalize(vertex.parametrization,vertex.parametrization),
